@@ -118,7 +118,11 @@ public class ScanServiceImpl implements ScanService {
     }
 
     private String runPythonAnalyzer(String code, String language) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder("python3", pythonScriptPath, language);
+        ProcessBuilder pb = new ProcessBuilder(
+                "/Users/balvindersingh/Documents/Vibe Code Compliance Checker/python-analyzer/venv/bin/python3",
+                pythonScriptPath,
+                language
+        );
         pb.redirectErrorStream(true);
 
         Process process = pb.start();
@@ -128,8 +132,12 @@ public class ScanServiceImpl implements ScanService {
         String output = new String(process.getInputStream().readAllBytes());
         int exitCode = process.waitFor();
 
+        log.debug("Python analyzer output: {}", output);
+        log.debug("Python analyzer exit code: {}", exitCode);
+
         if (exitCode != 0) {
-            throw new RuntimeException("Python analyzer exited with code: " + exitCode);
+            log.error("Python analyzer failed with output: {}", output);
+            throw new RuntimeException("Python analyzer exited with code: " + exitCode + " output: " + output);
         }
 
         return output;
