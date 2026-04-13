@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { scanService } from '../services/scanService';
 import { ScanResponse, UserStats } from '../types';
-import { Code2, TrendingUp, Zap, Clock, ChevronRight, Plus } from 'lucide-react';
+import { Code2, TrendingUp, Zap, Clock, ChevronRight, Plus, X } from 'lucide-react';
 import { toast } from 'react-toastify';
+import VibeScoreGauge from '../components/scan/VibeScoreGauge';
+import MetricCard from '../components/scan/MetricCard';
 
 const DashboardPage: React.FC = () => {
     const { user } = useAuth();
@@ -12,6 +14,7 @@ const DashboardPage: React.FC = () => {
     const [stats, setStats] = useState<UserStats | null>(null);
     const [recentScans, setRecentScans] = useState<ScanResponse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedScan, setSelectedScan] = useState<ScanResponse | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -30,6 +33,15 @@ const DashboardPage: React.FC = () => {
         };
         fetchData();
     }, []);
+
+    const handleViewScan = async (scan: ScanResponse) => {
+        try {
+            const detail = await scanService.getScanById(scan.id);
+            setSelectedScan(detail);
+        } catch {
+            setSelectedScan(scan);
+        }
+    };
 
     const getVibeColor = (score: number) => {
         if (score >= 90) return '#00e676';
@@ -152,7 +164,7 @@ const DashboardPage: React.FC = () => {
                     />
                 </div>
 
-                {/* Recent Scans - fills remaining space */}
+                {/* Recent Scans */}
                 <div style={{
                     background: 'rgba(255,255,255,0.02)',
                     border: '1px solid rgba(255,255,255,0.06)',
@@ -201,12 +213,7 @@ const DashboardPage: React.FC = () => {
                         </button>
                     </div>
 
-                    {/* Scrollable scan list */}
-                    <div style={{
-                        flex: 1,
-                        minHeight: 0,
-                        overflowY: 'auto',
-                    }}>
+                    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
                         {isLoading ? (
                             <div style={{
                                 color: 'rgba(255,255,255,0.3)',
@@ -250,15 +257,11 @@ const DashboardPage: React.FC = () => {
                                 </button>
                             </div>
                         ) : (
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '8px',
-                            }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                 {recentScans.map(scan => (
                                     <div
                                         key={scan.id}
-                                        onClick={() => navigate('/scan')}
+                                        onClick={() => handleViewScan(scan)}
                                         style={{
                                             display: 'flex',
                                             alignItems: 'center',
@@ -271,16 +274,12 @@ const DashboardPage: React.FC = () => {
                                             transition: 'all 0.2s',
                                         }}
                                         onMouseEnter={e => {
-                                            (e.currentTarget as HTMLElement).style.borderColor =
-                                                'rgba(108,99,255,0.3)';
-                                            (e.currentTarget as HTMLElement).style.background =
-                                                'rgba(108,99,255,0.05)';
+                                            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(108,99,255,0.3)';
+                                            (e.currentTarget as HTMLElement).style.background = 'rgba(108,99,255,0.05)';
                                         }}
                                         onMouseLeave={e => {
-                                            (e.currentTarget as HTMLElement).style.borderColor =
-                                                'rgba(255,255,255,0.05)';
-                                            (e.currentTarget as HTMLElement).style.background =
-                                                'rgba(255,255,255,0.02)';
+                                            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.05)';
+                                            (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)';
                                         }}
                                     >
                                         <div>
@@ -297,16 +296,10 @@ const DashboardPage: React.FC = () => {
                                                 fontSize: '12px',
                                                 textTransform: 'capitalize',
                                             }}>
-                                                {scan.language} • {new Date(
-                                                scan.createdAt).toLocaleDateString()}
+                                                {scan.language} • {new Date(scan.createdAt).toLocaleDateString()}
                                             </div>
                                         </div>
-
-                                        <div style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '12px',
-                                        }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <span style={{
                           fontSize: '11px',
                           fontWeight: 700,
@@ -314,7 +307,6 @@ const DashboardPage: React.FC = () => {
                           background: `${getLevelColor(scan.vibeLevel)}15`,
                           padding: '3px 10px',
                           borderRadius: '6px',
-                          letterSpacing: '0.3px',
                       }}>
                         {scan.vibeLevel}
                       </span>
@@ -335,8 +327,186 @@ const DashboardPage: React.FC = () => {
                         )}
                     </div>
                 </div>
-
             </div>
+
+            {/* Scan Detail Modal */}
+            {selectedScan && (
+                <div
+                    onClick={() => setSelectedScan(null)}
+                    style={{
+                        position: 'fixed',
+                        top: '65px',
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0,0,0,0.8)',
+                        backdropFilter: 'blur(8px)',
+                        zIndex: 1000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '1.5rem',
+                    }}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        style={{
+                            background: '#0f0f1a',
+                            border: '1px solid rgba(108,99,255,0.3)',
+                            borderRadius: '20px',
+                            width: '100%',
+                            maxWidth: '800px',
+                            maxHeight: '85vh',
+                            overflow: 'hidden',
+                            display: 'flex',
+                            flexDirection: 'column',
+                        }}
+                    >
+                        {/* Modal Header */}
+                        <div style={{
+                            padding: '1.25rem 1.5rem',
+                            borderBottom: '1px solid rgba(255,255,255,0.06)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexShrink: 0,
+                        }}>
+                            <div>
+                                <h2 style={{ color: 'white', margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>
+                                    {selectedScan.title}
+                                </h2>
+                                <p style={{
+                                    color: 'rgba(255,255,255,0.4)',
+                                    margin: '3px 0 0',
+                                    fontSize: '12px',
+                                    textTransform: 'capitalize',
+                                }}>
+                                    {selectedScan.language} • {new Date(
+                                    selectedScan.createdAt).toLocaleDateString('en-US', {
+                                    month: 'short', day: 'numeric', year: 'numeric',
+                                    hour: '2-digit', minute: '2-digit',
+                                })}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setSelectedScan(null)}
+                                style={{
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: '8px',
+                                    padding: '8px',
+                                    color: 'rgba(255,255,255,0.6)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                }}
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div style={{
+                            flex: 1,
+                            overflowY: 'auto',
+                            padding: '1.5rem',
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1.5fr',
+                            gap: '1.25rem',
+                            alignItems: 'start',
+                        }}>
+                            {/* Left — Score */}
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: '1rem',
+                                background: 'rgba(255,255,255,0.02)',
+                                border: '1px solid rgba(108,99,255,0.2)',
+                                borderRadius: '14px',
+                                padding: '1.25rem',
+                            }}>
+                                <VibeScoreGauge
+                                    score={selectedScan.vibeScore}
+                                    level={selectedScan.vibeLevel}
+                                />
+                                <div style={{
+                                    width: '100%',
+                                    display: 'grid',
+                                    gridTemplateColumns: '1fr 1fr',
+                                    gap: '8px',
+                                }}>
+                                    {[
+                                        { label: 'Status', value: selectedScan.status, color: '#69f0ae' },
+                                        { label: 'Language', value: selectedScan.language, color: 'white' },
+                                        {
+                                            label: 'Metrics Passed',
+                                            value: `${selectedScan.results?.filter(r => r.passed).length ?? 0} / ${selectedScan.results?.length ?? 0}`,
+                                            color: '#6c63ff'
+                                        },
+                                        {
+                                            label: 'Total Violations',
+                                            value: String(selectedScan.results?.reduce(
+                                                (acc, r) => acc + (r.violations?.length ?? 0), 0) ?? 0),
+                                            color: '#ff9800'
+                                        },
+                                    ].map(item => (
+                                        <div key={item.label} style={{
+                                            background: 'rgba(255,255,255,0.03)',
+                                            borderRadius: '8px',
+                                            padding: '8px',
+                                            textAlign: 'center',
+                                        }}>
+                                            <div style={{
+                                                color: 'rgba(255,255,255,0.4)',
+                                                fontSize: '10px',
+                                                marginBottom: '3px',
+                                            }}>
+                                                {item.label}
+                                            </div>
+                                            <div style={{
+                                                color: item.color,
+                                                fontWeight: 700,
+                                                fontSize: '13px',
+                                                textTransform: 'capitalize',
+                                            }}>
+                                                {item.value}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Right — Metrics */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <h3 style={{
+                                    color: 'white',
+                                    margin: '0 0 4px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 700,
+                                }}>
+                                    📊 Metrics Breakdown
+                                </h3>
+                                {selectedScan.results && selectedScan.results.length > 0 ? (
+                                    selectedScan.results.map(metric => (
+                                        <MetricCard key={metric.id} metric={metric} />
+                                    ))
+                                ) : (
+                                    <div style={{
+                                        color: 'rgba(255,255,255,0.3)',
+                                        fontSize: '13px',
+                                        textAlign: 'center',
+                                        padding: '2rem',
+                                        background: 'rgba(255,255,255,0.02)',
+                                        borderRadius: '10px',
+                                    }}>
+                                        No detailed metrics available for this scan
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -357,11 +527,7 @@ const StatCard: React.FC<{
         flexDirection: 'column',
         gap: '8px',
     }}>
-        <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-        }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{
                 background: `${color}15`,
                 borderRadius: '8px',
@@ -370,19 +536,11 @@ const StatCard: React.FC<{
             }}>
                 {icon}
             </div>
-            <span style={{
-                color: 'rgba(255,255,255,0.45)',
-                fontSize: '12px',
-                fontWeight: 500,
-            }}>
+            <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', fontWeight: 500 }}>
         {label}
       </span>
         </div>
-        <div style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            gap: '6px',
-        }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
       <span style={{
           color: 'white',
           fontSize: '1.6rem',
@@ -393,10 +551,7 @@ const StatCard: React.FC<{
         {value}
       </span>
             {suffix && (
-                <span style={{
-                    color: 'rgba(255,255,255,0.2)',
-                    fontSize: '12px',
-                }}>
+                <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '12px' }}>
           {suffix}
         </span>
             )}

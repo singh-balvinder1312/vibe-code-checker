@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { scanService } from '../services/scanService';
 import { ScanResponse } from '../types';
-import { Trash2, Eye, ChevronLeft, ChevronRight, History } from 'lucide-react';
+import { Trash2, Eye, ChevronLeft, ChevronRight, History, X } from 'lucide-react';
 import { toast } from 'react-toastify';
+import VibeScoreGauge from '../components/scan/VibeScoreGauge';
+import MetricCard from '../components/scan/MetricCard';
 
 const HistoryPage: React.FC = () => {
     const navigate = useNavigate();
@@ -12,6 +14,7 @@ const HistoryPage: React.FC = () => {
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [selectedScan, setSelectedScan] = useState<ScanResponse | null>(null);
 
     const fetchScans = async (pageNum: number) => {
         setIsLoading(true);
@@ -29,6 +32,15 @@ const HistoryPage: React.FC = () => {
     useEffect(() => {
         fetchScans(page);
     }, [page]);
+
+    const handleView = async (scan: ScanResponse) => {
+        try {
+            const detail = await scanService.getScanById(scan.id);
+            setSelectedScan(detail);
+        } catch {
+            setSelectedScan(scan);
+        }
+    };
 
     const handleDelete = async (scanId: number) => {
         if (!window.confirm('Delete this scan?')) return;
@@ -111,7 +123,7 @@ const HistoryPage: React.FC = () => {
                     </p>
                 </div>
 
-                {/* Content */}
+                {/* Scan List */}
                 <div style={{
                     flex: 1,
                     minHeight: 0,
@@ -142,11 +154,7 @@ const HistoryPage: React.FC = () => {
                             gap: '12px',
                         }}>
                             <History size={48} color="rgba(255,255,255,0.08)" />
-                            <p style={{
-                                color: 'rgba(255,255,255,0.3)',
-                                margin: 0,
-                                fontSize: '14px',
-                            }}>
+                            <p style={{ color: 'rgba(255,255,255,0.3)', margin: 0, fontSize: '14px' }}>
                                 No scans found
                             </p>
                             <button
@@ -181,12 +189,10 @@ const HistoryPage: React.FC = () => {
                                     flexShrink: 0,
                                 }}
                                 onMouseEnter={e => {
-                                    (e.currentTarget as HTMLElement).style.borderColor =
-                                        'rgba(108,99,255,0.3)';
+                                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(108,99,255,0.3)';
                                 }}
                                 onMouseLeave={e => {
-                                    (e.currentTarget as HTMLElement).style.borderColor =
-                                        'rgba(255,255,255,0.06)';
+                                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
                                 }}
                             >
                                 <div style={{ flex: 1 }}>
@@ -196,11 +202,7 @@ const HistoryPage: React.FC = () => {
                                         gap: '10px',
                                         marginBottom: '4px',
                                     }}>
-                    <span style={{
-                        color: 'white',
-                        fontWeight: 600,
-                        fontSize: '15px',
-                    }}>
+                    <span style={{ color: 'white', fontWeight: 600, fontSize: '15px' }}>
                       {scan.title}
                     </span>
                                         <span style={{
@@ -221,26 +223,17 @@ const HistoryPage: React.FC = () => {
                                         gap: '12px',
                                     }}>
                                         <span>#{scan.id}</span>
-                                        <span style={{ textTransform: 'capitalize' }}>
-                      {scan.language}
-                    </span>
+                                        <span style={{ textTransform: 'capitalize' }}>{scan.language}</span>
                                         <span>
                       {new Date(scan.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
+                          month: 'short', day: 'numeric', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit',
                       })}
                     </span>
                                     </div>
                                 </div>
 
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '16px',
-                                }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                                     <div style={{ textAlign: 'right' }}>
                                         <div style={{
                                             fontSize: '1.6rem',
@@ -250,17 +243,13 @@ const HistoryPage: React.FC = () => {
                                         }}>
                                             {scan.vibeScore?.toFixed(0)}
                                         </div>
-                                        <div style={{
-                                            fontSize: '10px',
-                                            color: 'rgba(255,255,255,0.2)',
-                                        }}>
+                                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.2)' }}>
                                             vibe score
                                         </div>
                                     </div>
-
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         <button
-                                            onClick={() => navigate('/scan')}
+                                            onClick={() => handleView(scan)}
                                             style={{
                                                 background: 'rgba(108,99,255,0.1)',
                                                 border: '1px solid rgba(108,99,255,0.3)',
@@ -282,8 +271,7 @@ const HistoryPage: React.FC = () => {
                                                 borderRadius: '8px',
                                                 padding: '8px',
                                                 color: '#f44336',
-                                                cursor: deletingId === scan.id
-                                                    ? 'not-allowed' : 'pointer',
+                                                cursor: deletingId === scan.id ? 'not-allowed' : 'pointer',
                                                 display: 'flex',
                                             }}
                                         >
@@ -304,7 +292,6 @@ const HistoryPage: React.FC = () => {
                         justifyContent: 'center',
                         alignItems: 'center',
                         gap: '12px',
-                        paddingTop: '0.5rem',
                     }}>
                         <button
                             onClick={() => setPage(p => Math.max(0, p - 1))}
@@ -324,10 +311,7 @@ const HistoryPage: React.FC = () => {
                         >
                             <ChevronLeft size={16} /> Prev
                         </button>
-                        <span style={{
-                            color: 'rgba(255,255,255,0.4)',
-                            fontSize: '13px',
-                        }}>
+                        <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>
               Page {page + 1} of {totalPages}
             </span>
                         <button
@@ -338,10 +322,8 @@ const HistoryPage: React.FC = () => {
                                 border: '1px solid rgba(255,255,255,0.1)',
                                 borderRadius: '8px',
                                 padding: '8px 16px',
-                                color: page === totalPages - 1
-                                    ? 'rgba(255,255,255,0.2)' : 'white',
-                                cursor: page === totalPages - 1
-                                    ? 'not-allowed' : 'pointer',
+                                color: page === totalPages - 1 ? 'rgba(255,255,255,0.2)' : 'white',
+                                cursor: page === totalPages - 1 ? 'not-allowed' : 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '4px',
@@ -353,6 +335,185 @@ const HistoryPage: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Modal Overlay */}
+            {selectedScan && (
+                <div
+                    onClick={() => setSelectedScan(null)}
+                    style={{
+                        position: 'fixed',
+                        top: '65px',
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0,0,0,0.8)',
+                        backdropFilter: 'blur(8px)',
+                        zIndex: 1000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '1.5rem',
+                    }}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        style={{
+                            background: '#0f0f1a',
+                            border: '1px solid rgba(108,99,255,0.3)',
+                            borderRadius: '20px',
+                            width: '100%',
+                            maxWidth: '800px',
+                            maxHeight: '85vh',
+                            overflow: 'hidden',
+                            display: 'flex',
+                            flexDirection: 'column',
+                        }}
+                    >
+                        {/* Modal Header */}
+                        <div style={{
+                            padding: '1.25rem 1.5rem',
+                            borderBottom: '1px solid rgba(255,255,255,0.06)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexShrink: 0,
+                        }}>
+                            <div>
+                                <h2 style={{
+                                    color: 'white',
+                                    margin: 0,
+                                    fontSize: '1.1rem',
+                                    fontWeight: 700,
+                                }}>
+                                    {selectedScan.title}
+                                </h2>
+                                <p style={{
+                                    color: 'rgba(255,255,255,0.4)',
+                                    margin: '3px 0 0',
+                                    fontSize: '12px',
+                                    textTransform: 'capitalize',
+                                }}>
+                                    {selectedScan.language} • {new Date(
+                                    selectedScan.createdAt).toLocaleDateString('en-US', {
+                                    month: 'short', day: 'numeric', year: 'numeric',
+                                    hour: '2-digit', minute: '2-digit',
+                                })}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setSelectedScan(null)}
+                                style={{
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: '8px',
+                                    padding: '8px',
+                                    color: 'rgba(255,255,255,0.6)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                }}
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div style={{
+                            flex: 1,
+                            overflowY: 'auto',
+                            padding: '1.5rem',
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1.5fr',
+                            gap: '1.25rem',
+                            alignItems: 'start',
+                        }}>
+                            {/* Left — Score */}
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: '1rem',
+                                background: 'rgba(255,255,255,0.02)',
+                                border: '1px solid rgba(108,99,255,0.2)',
+                                borderRadius: '14px',
+                                padding: '1.25rem',
+                            }}>
+                                <VibeScoreGauge
+                                    score={selectedScan.vibeScore}
+                                    level={selectedScan.vibeLevel}
+                                />
+                                <div style={{
+                                    width: '100%',
+                                    display: 'grid',
+                                    gridTemplateColumns: '1fr 1fr',
+                                    gap: '8px',
+                                }}>
+                                    {[
+                                        { label: 'Status', value: selectedScan.status, color: '#69f0ae' },
+                                        { label: 'Language', value: selectedScan.language, color: 'white' },
+                                        { label: 'Metrics Passed', value: `${selectedScan.results?.filter(r => r.passed).length ?? 0} / ${selectedScan.results?.length ?? 0}`, color: '#6c63ff' },
+                                        { label: 'Total Violations', value: String(selectedScan.results?.reduce((acc, r) => acc + (r.violations?.length ?? 0), 0) ?? 0), color: '#ff9800' },
+                                    ].map(item => (
+                                        <div key={item.label} style={{
+                                            background: 'rgba(255,255,255,0.03)',
+                                            borderRadius: '8px',
+                                            padding: '8px',
+                                            textAlign: 'center',
+                                        }}>
+                                            <div style={{
+                                                color: 'rgba(255,255,255,0.4)',
+                                                fontSize: '10px',
+                                                marginBottom: '3px',
+                                            }}>
+                                                {item.label}
+                                            </div>
+                                            <div style={{
+                                                color: item.color,
+                                                fontWeight: 700,
+                                                fontSize: '13px',
+                                                textTransform: 'capitalize',
+                                            }}>
+                                                {item.value}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Right — Metrics */}
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '8px',
+                            }}>
+                                <h3 style={{
+                                    color: 'white',
+                                    margin: '0 0 4px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 700,
+                                }}>
+                                    📊 Metrics Breakdown
+                                </h3>
+                                {selectedScan.results && selectedScan.results.length > 0 ? (
+                                    selectedScan.results.map(metric => (
+                                        <MetricCard key={metric.id} metric={metric} />
+                                    ))
+                                ) : (
+                                    <div style={{
+                                        color: 'rgba(255,255,255,0.3)',
+                                        fontSize: '13px',
+                                        textAlign: 'center',
+                                        padding: '2rem',
+                                        background: 'rgba(255,255,255,0.02)',
+                                        borderRadius: '10px',
+                                    }}>
+                                        No detailed metrics available for this scan
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
