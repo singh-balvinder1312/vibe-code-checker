@@ -66,11 +66,14 @@ const App: React.FC = () => {
   return (
       <BrowserRouter>
         <AuthProvider>
-          <div style={{
-            minHeight: '100vh',
-            background: '#0a0a0f',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-          }}>
+            <div style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                background: '#0a0a0f',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+            }}>
             <AppRoutes />
             <ToastContainer
                 position="top-right"
