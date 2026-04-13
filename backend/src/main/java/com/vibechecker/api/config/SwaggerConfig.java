@@ -13,13 +13,16 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class SwaggerConfig {
 
+    private static final String SECURITY_SCHEME_NAME = "Bearer Authentication";
+
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI()
                 .info(new Info()
                         .title("Vibe Code Compliance Checker API")
-                        .description("API for checking vibe code compliance against coding standards. " +
-                                "Analyzes code quality across 5 metrics and returns a Vibe Score (0-100).")
+                        .description("API for checking vibe code compliance. " +
+                                "Analyzes code quality across 10 metrics " +
+                                "and returns a Vibe Score (0-100).")
                         .version("1.0.0")
                         .contact(new Contact()
                                 .name("Balvinder Singh")
@@ -27,10 +30,11 @@ public class SwaggerConfig {
                         .license(new License()
                                 .name("MIT License")))
                 .addSecurityItem(new SecurityRequirement()
-                        .addList("Bearer Authentication"))
+                        .addList(SECURITY_SCHEME_NAME))
                 .components(new Components()
-                        .addSecuritySchemes("Bearer Authentication",
+                        .addSecuritySchemes(SECURITY_SCHEME_NAME,
                                 new SecurityScheme()
+                                        .name(SECURITY_SCHEME_NAME)
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")
